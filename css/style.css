@@ -96,22 +96,21 @@ a { color: var(--blue); text-decoration: none; }
 
 /* ============ RIGHT PANEL ============ */
 .right-panel {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    overflow-y: auto;
+    flex: 1; display: flex; overflow-y: auto;
 }
 .right-panel::-webkit-scrollbar { width: 4px; }
 .right-panel::-webkit-scrollbar-thumb { background: var(--text-4); border-radius: 99px; }
 
 /* placeholder */
-.right-placeholder { text-align: center; color: var(--text-4); }
+.right-placeholder { text-align: center; color: var(--text-4); margin: auto; }
 .placeholder-icon { font-size: 3rem; display: block; margin-bottom: 12px; opacity: 0.25; }
 .right-placeholder p { font-size: 0.9rem; }
 .right-placeholder .sub { font-size: 0.75rem; margin-top: 4px; }
 
 /* ============ EDITOR ============ */
 .editor {
-    width: 100%; max-width: 680px; margin: 0 auto;
-    padding: 40px 48px 80px; display: flex; flex-direction: column;
+    width: 100%; margin: 0;
+    padding: 40px 56px 80px; display: flex; flex-direction: column;
     min-height: 100vh;
 }
 .editor-toolbar {
