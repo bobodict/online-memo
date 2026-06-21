@@ -69,6 +69,16 @@ a { color: var(--blue); text-decoration: none; }
 .bar-nav .logout-link { color: var(--red); }
 .bar-nav .logout-link:hover { background: var(--red-bg); }
 
+.btn-new-memo {
+    display: block; width: calc(100% - 24px); margin: 4px 12px 8px;
+    padding: 10px 0; border: none; border-radius: var(--radius-sm);
+    background: var(--blue); color: #fff;
+    font-size: 0.85rem; font-weight: 600; font-family: var(--font);
+    cursor: pointer; transition: all 0.12s; letter-spacing: -0.01em;
+}
+.btn-new-memo:hover { background: #0066D6; }
+.btn-new-memo:active { transform: scale(0.98); }
+
 .bar-section-title {
     font-size: 0.7rem; font-weight: 700; color: var(--text-3);
     text-transform: uppercase; letter-spacing: 0.04em;
