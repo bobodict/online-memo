@@ -16,13 +16,13 @@ require_once __DIR__ . '/includes/header.php';
 
 <section class="dashboard">
     <div class="dashboard-header">
-        <h2>👋 欢迎，<?php echo htmlspecialchars($user['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+        <h2>欢迎，<?php echo htmlspecialchars($user['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
         <p class="text-secondary">管理你的备忘录，记录每一个重要事项</p>
     </div>
 
     <!-- 新建备忘录表单 -->
     <div class="memo-form-wrapper">
-        <h3 class="form-section-title">✏️ 新建备忘录</h3>
+        <h3 class="form-section-title">新建备忘录</h3>
         <form id="memo-form" class="memo-form" novalidate>
             <div class="form-group">
                 <label for="memo-title">标题 <span class="required">*</span></label>
@@ -50,7 +50,7 @@ require_once __DIR__ . '/includes/header.php';
                 <span class="char-count" id="content-count">0 / 5000</span>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary" id="submit-btn">📌 添加备忘录</button>
+                <button type="submit" class="btn btn-primary" id="submit-btn">添加备忘录</button>
                 <button type="button" class="btn btn-secondary" id="cancel-edit-btn" style="display:none;">取消编辑</button>
             </div>
         </form>
@@ -62,7 +62,7 @@ require_once __DIR__ . '/includes/header.php';
     <!-- 备忘录列表 -->
     <div class="memo-list-wrapper">
         <h3 class="form-section-title">
-            📋 我的备忘录
+            我的备忘录
             <span class="memo-count" id="memo-count"></span>
         </h3>
 
@@ -77,7 +77,7 @@ require_once __DIR__ . '/includes/header.php';
 
         <!-- 空状态 -->
         <div id="empty-state" class="empty-state" style="display:none;">
-            <div class="empty-icon">📭</div>
+            <div class="empty-icon">&middot; &middot; &middot;</div>
             <p>还没有备忘录</p>
             <p class="text-secondary">在上方创建你的第一个备忘录吧！</p>
         </div>

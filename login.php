@@ -35,7 +35,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="auth-page">
     <div class="auth-card">
-        <h1 class="auth-title">🔐 登录</h1>
+        <h1 class="auth-title">登录</h1>
         <p class="auth-subtitle">登录你的备忘录账号</p>
 
         <?php if ($error): ?>
