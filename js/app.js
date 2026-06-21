@@ -1,180 +1,215 @@
 /**
- * 在线备忘录 - 前端 JS (Apple Notes style)
+ * 在线备忘录 - 前端 JS (双栏布局)
  */
 (function () {
     'use strict';
-
-    var state = { memos: [], editingId: null };
-    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    var state = { memos: [], editingId: null, activeId: null };
+    var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     function $(id) { return document.getElementById(id); }
-    var memoList = $('memo-list'), submitBtn = $('submit-btn'), cancelBtn = $('cancel-edit-btn');
-    var titleInput = $('memo-title'), contentInput = $('memo-content');
-    var titleError = $('title-error'), contentCount = $('content-count'), memoCount = $('memo-count');
-    var loadingEl = $('loading-state'), emptyEl = $('empty-state'), msgC = $('message-container');
-
     function esc(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
 
-    function msg(text, type) {
+    // DOM refs
+    var barList = $('bar-list'), barEmpty = $('bar-empty'), barLoading = $('bar-loading'), barFooter = $('bar-footer'), barSection = $('bar-section-title');
+    var formArea = $('form-area'), formHeading = $('form-heading'), rightPlaceholder = $('right-placeholder');
+    var titleInput = $('memo-title'), contentInput = $('memo-content');
+    var submitBtn = $('submit-btn'), cancelBtn = $('cancel-edit-btn'), deleteBtn = $('delete-edit-btn');
+    var titleError = $('title-error'), contentCount = $('content-count');
+    var toastArea = $('toast-area');
+
+    // Toast
+    function toast(text, type) {
         var t = document.createElement('div');
         t.className = 'toast toast-' + (type === 'error' ? 'error' : 'success');
         t.innerHTML = '<span>' + esc(text) + '</span><button class="toast-close" onclick="this.parentElement.remove()">x</button>';
-        if (msgC) msgC.appendChild(t);
+        if (toastArea) toastArea.appendChild(t);
         setTimeout(function () { if (t.parentElement) t.remove(); }, 4000);
     }
 
-    // ---- Validation ----
+    // Validate
     function validate() {
         if (!titleInput) return false;
-        var ok = true;
         if (titleInput.value.trim() === '') {
             if (titleError) titleError.textContent = '标题不能为空';
-            titleInput.classList.add('input-error'); ok = false;
-        } else {
-            if (titleError) titleError.textContent = '';
-            titleInput.classList.remove('input-error');
+            titleInput.classList.add('input-error'); return false;
         }
-        return ok;
+        if (titleError) titleError.textContent = '';
+        titleInput.classList.remove('input-error'); return true;
     }
 
-    // ---- API ----
+    // API
     function api(action, data) {
-        var opts = { method: action === 'list' ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken } };
+        var opts = { method: action === 'list' ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf } };
         if (action !== 'list' && data !== undefined) opts.body = JSON.stringify(data);
         return fetch('api/memos.php?action=' + encodeURIComponent(action), opts)
             .then(function (r) { if (r.status === 401) { location.href = 'login.php'; throw new Error('未登录'); } return r.json(); })
             .then(function (j) { if (!j.success) throw new Error(j.message); return j; });
     }
 
-    // ---- Load ----
+    // Load
     function fetchMemos() {
-        if (loadingEl) loadingEl.style.display = 'block';
-        if (memoList) memoList.style.display = 'none';
-        if (emptyEl) emptyEl.style.display = 'none';
-        api('list').then(function (j) { state.memos = j.memos; render(); })
-        .catch(function (e) { if (e.message !== '未登录') msg('加载失败: ' + e.message, 'error'); if (loadingEl) loadingEl.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; updateCount(); });
+        if (barLoading) barLoading.style.display = 'block';
+        api('list').then(function (j) { state.memos = j.memos; renderBar(); if (state.memos.length > 0) selectMemo(state.memos[0].id); })
+        .catch(function (e) { if (e.message !== '未登录') toast('加载失败', 'error'); });
     }
 
-    // ---- Render ----
-    function render() {
-        if (loadingEl) loadingEl.style.display = 'none';
+    // Render sidebar
+    function renderBar() {
+        if (barLoading) barLoading.style.display = 'none';
         if (state.memos.length === 0) {
-            if (memoList) { memoList.style.display = 'none'; memoList.innerHTML = ''; }
-            if (emptyEl) emptyEl.style.display = 'block';
+            if (barEmpty) barEmpty.style.display = 'block';
+            if (rightPlaceholder) rightPlaceholder.style.display = 'flex';
+            if (formArea) formArea.style.display = 'none';
         } else {
-            if (emptyEl) emptyEl.style.display = 'none';
-            if (memoList) { memoList.style.display = ''; memoList.innerHTML = state.memos.map(card).join(''); }
+            if (barEmpty) barEmpty.style.display = 'none';
+            var html = '';
+            for (var i = 0; i < state.memos.length; i++) {
+                var m = state.memos[i];
+                var cls = 'bar-item' + (m.is_completed ? ' done' : '') + (state.activeId === m.id ? ' active' : '');
+                html += '<div class="' + cls + '" data-id="' + m.id + '">' +
+                    '<div class="bar-item-title">' + esc(m.title) + '</div>' +
+                    '<div class="bar-item-meta">' + fmt(m.updated_at || m.created_at) + '</div></div>';
+            }
+            if (barList) barList.innerHTML = html;
         }
-        updateCount();
+        updateFooter();
     }
 
-    function card(m) {
-        var editing = state.editingId === m.id;
-        var done = m.is_completed ? ' done' : '';
-        var meta = fmt(m.created_at);
-        var body = m.content ? '<div class="memo-card-content">' + esc(m.content) + '</div>' : '';
-
-        if (editing) {
-            return '<div class="memo-card" data-id="' + m.id + '"><span class="memo-dot"></span>' +
-                '<div class="memo-edit-block">' +
-                '<input class="input edit-title" value="' + esc(m.title) + '" maxlength="200" placeholder="标题">' +
-                '<input class="input edit-content" value="' + esc(m.content) + '" maxlength="5000" placeholder="内容">' +
-                '<div class="memo-edit-actions"><button class="btn btn-primary btn-sm btn-save" data-id="' + m.id + '">保存</button>' +
-                '<button class="btn btn-secondary btn-sm btn-cancel-edit">取消</button></div></div></div>';
-        }
-        return '<div class="memo-card' + done + '" data-id="' + m.id + '">' +
-            '<span class="memo-dot" data-id="' + m.id + '" data-act="toggle"></span>' +
-            '<div class="memo-body"><div class="memo-card-title">' + esc(m.title) + '</div>' + body +
-            '<div class="memo-card-meta">' + meta + '</div></div>' +
-            '<div class="memo-actions">' +
-            '<button class="btn btn-secondary btn-sm btn-edit" data-id="' + m.id + '">编辑</button>' +
-            '<button class="btn btn-danger btn-sm btn-delete" data-id="' + m.id + '">删除</button>' +
-            '</div></div>';
-    }
-
-    function updateCount() {
+    function updateFooter() {
         var t = state.memos.length, c = state.memos.filter(function (x) { return x.is_completed; }).length;
-        if (memoCount) memoCount.textContent = t + ' 条（' + c + ' 已完成）';
+        if (barFooter) barFooter.textContent = t + ' 条备忘录，' + c + ' 已完成';
+        if (barSection) barSection.textContent = '所有备忘录 (' + t + ')';
     }
 
-    function fmt(d) { var dt = new Date(d); return dt.getFullYear() + '/' + p(dt.getMonth()+1) + '/' + p(dt.getDate()) + ' ' + p(dt.getHours()) + ':' + p(dt.getMinutes()); }
-    function p(n) { return n < 10 ? '0' + n : '' + n; }
-
-    // ---- CRUD ----
-    function create(title, content) {
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '...'; }
-        api('create', { title: title, content: content }).then(function (j) { state.memos.unshift(j.memo); render(); reset(); msg('已创建', 'success'); })
-        .catch(function (e) { msg(e.message, 'error'); })
-        .finally(function () { if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '添加'; } });
-    }
-
-    function update(id, title, content) {
-        api('update', { id: id, title: title, content: content }).then(function (j) {
-            var i = state.memos.findIndex(function (x) { return x.id === id; });
-            if (i !== -1) state.memos[i] = j.memo;
-            exitEdit(); render(); msg('已更新', 'success');
-        }).catch(function (e) { msg(e.message, 'error'); });
-    }
-
-    function remove(id) {
-        if (!confirm('删除这条备忘录？')) return;
-        api('delete', { id: id }).then(function () { state.memos = state.memos.filter(function (x) { return x.id !== id; }); render(); msg('已删除', 'success'); })
-        .catch(function (e) { msg(e.message, 'error'); });
-    }
-
-    function toggle(id) {
-        api('toggle', { id: id }).then(function (j) {
-            var i = state.memos.findIndex(function (x) { return x.id === id; });
-            if (i !== -1) state.memos[i].is_completed = j.is_completed;
-            render(); msg(j.is_completed ? '已完成' : '已恢复', 'success');
-        }).catch(function (e) { msg(e.message, 'error'); });
-    }
-
-    // ---- Form ----
-    function reset() { if (titleInput) { titleInput.value = ''; titleInput.classList.remove('input-error'); } if (contentInput) contentInput.value = ''; if (titleError) titleError.textContent = ''; if (contentCount) contentCount.textContent = '0 / 5000'; if (titleInput) titleInput.focus(); }
-
-    function exitEdit() { state.editingId = null; if (submitBtn) { submitBtn.textContent = '添加'; } if (cancelBtn) cancelBtn.style.display = 'none'; reset(); }
-
-    function enterEdit(memo) {
-        state.editingId = memo.id;
-        if (titleInput) titleInput.value = memo.title;
-        if (contentInput) contentInput.value = memo.content;
-        if (contentCount) contentCount.textContent = memo.content.length + ' / 5000';
+    // Select memo → show in right panel
+    function selectMemo(id) {
+        state.activeId = id;
+        var m = state.memos.find(function (x) { return x.id === id; });
+        if (!m) return;
+        if (rightPlaceholder) rightPlaceholder.style.display = 'none';
+        if (formArea) formArea.style.display = '';
+        if (formHeading) formHeading.textContent = m.is_completed ? '已完成' : '编辑备忘录';
+        // Fill form
+        state.editingId = id;
+        if (titleInput) titleInput.value = m.title;
+        if (contentInput) contentInput.value = m.content;
+        if (contentCount) contentCount.textContent = m.content.length + ' / 5000';
         if (submitBtn) submitBtn.textContent = '保存修改';
         if (cancelBtn) cancelBtn.style.display = '';
+        if (deleteBtn) deleteBtn.style.display = '';
+        // Highlight bar
+        renderBar();
+    }
+
+    // New memo mode
+    function newMemoMode() {
+        state.editingId = null; state.activeId = null;
+        if (rightPlaceholder) rightPlaceholder.style.display = 'none';
+        if (formArea) formArea.style.display = '';
+        if (formHeading) formHeading.textContent = '新建备忘录';
+        resetForm();
+        if (submitBtn) submitBtn.textContent = '添加备忘录';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
+        renderBar();
         if (titleInput) titleInput.focus();
     }
 
-    // ---- Events ----
+    function resetForm() {
+        if (titleInput) { titleInput.value = ''; titleInput.classList.remove('input-error'); }
+        if (contentInput) contentInput.value = '';
+        if (titleError) titleError.textContent = '';
+        if (contentCount) contentCount.textContent = '0 / 5000';
+    }
+
+    function fmt(d) { var dt = new Date(d); return dt.getFullYear() + '/' + p(dt.getMonth()+1) + '/' + p(dt.getDate()); }
+    function p(n) { return n < 10 ? '0' + n : '' + n; }
+
+    // CRUD
+    function create() {
+        if (!validate()) return;
+        var title = titleInput.value.trim(), content = contentInput.value.trim();
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '...'; }
+        api('create', { title: title, content: content }).then(function (j) {
+            state.memos.unshift(j.memo);
+            state.activeId = j.memo.id; state.editingId = j.memo.id;
+            renderBar(); toast('已创建', 'success');
+            if (formHeading) formHeading.textContent = '编辑备忘录';
+            if (submitBtn) submitBtn.textContent = '保存修改';
+            if (cancelBtn) cancelBtn.style.display = '';
+            if (deleteBtn) deleteBtn.style.display = '';
+        }).catch(function (e) { toast(e.message, 'error'); })
+        .finally(function () { if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '添加备忘录'; } });
+    }
+
+    function update() {
+        if (!validate()) return;
+        if (!state.editingId) return;
+        var title = titleInput.value.trim(), content = contentInput.value.trim();
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '...'; }
+        api('update', { id: state.editingId, title: title, content: content }).then(function (j) {
+            var i = state.memos.findIndex(function (x) { return x.id === j.memo.id; });
+            if (i !== -1) state.memos[i] = j.memo;
+            renderBar(); toast('已更新', 'success');
+        }).catch(function (e) { toast(e.message, 'error'); })
+        .finally(function () { if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '保存修改'; } });
+    }
+
+    function remove() {
+        if (!state.editingId) return;
+        if (!confirm('删除这条备忘录？')) return;
+        var id = state.editingId;
+        api('delete', { id: id }).then(function () {
+            state.memos = state.memos.filter(function (x) { return x.id !== id; });
+            state.editingId = null; state.activeId = null;
+            renderBar();
+            if (state.memos.length > 0) selectMemo(state.memos[0].id);
+            else newMemoMode();
+            toast('已删除', 'success');
+        }).catch(function (e) { toast(e.message, 'error'); });
+    }
+
+    function toggle() {
+        if (!state.editingId) return;
+        var id = state.editingId;
+        api('toggle', { id: id }).then(function (j) {
+            var i = state.memos.findIndex(function (x) { return x.id === id; });
+            if (i !== -1) state.memos[i].is_completed = j.is_completed;
+            if (formHeading) formHeading.textContent = j.is_completed ? '已完成' : '编辑备忘录';
+            renderBar(); toast(j.is_completed ? '已完成' : '已恢复', 'success');
+        }).catch(function (e) { toast(e.message, 'error'); });
+    }
+
+    // Events
     if (submitBtn) submitBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        if (!validate()) return;
-        var t = titleInput.value.trim(), c = contentInput.value.trim();
-        if (state.editingId !== null) update(state.editingId, t, c);
-        else create(t, c);
+        if (state.editingId !== null) update(); else create();
     });
 
-    if (cancelBtn) cancelBtn.addEventListener('click', function () { exitEdit(); render(); });
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { newMemoMode(); });
 
-    if (titleInput) titleInput.addEventListener('input', function () { if (titleInput.value.trim() !== '') { if (titleError) titleError.textContent = ''; titleInput.classList.remove('input-error'); } });
-    if (contentInput) contentInput.addEventListener('input', function () { if (contentCount) contentCount.textContent = contentInput.value.length + ' / 5000'; });
+    if (deleteBtn) deleteBtn.addEventListener('click', function () { remove(); });
 
-    if (memoList) memoList.addEventListener('click', function (e) {
-        var t = e.target;
-        var id = parseInt(t.getAttribute('data-id'));
-        if (!id) return;
-        // Toggle via dot click
-        if (t.getAttribute('data-act') === 'toggle') { toggle(id); return; }
-        if (t.classList.contains('btn-edit')) { var m = state.memos.find(function (x) { return x.id === id; }); if (m) enterEdit(m); }
-        if (t.classList.contains('btn-save')) {
-            var card = t.closest('.memo-card');
-            var nt = card.querySelector('.edit-title')?.value?.trim() || '';
-            var nc = card.querySelector('.edit-content')?.value?.trim() || '';
-            if (nt === '') { msg('标题不能为空', 'error'); return; }
-            update(id, nt, nc);
-        }
-        if (t.classList.contains('btn-cancel-edit')) { exitEdit(); render(); }
-        if (t.classList.contains('btn-delete')) { remove(id); }
+    if (titleInput) titleInput.addEventListener('input', function () {
+        if (titleInput.value.trim() !== '') { if (titleError) titleError.textContent = ''; titleInput.classList.remove('input-error'); }
+    });
+
+    if (contentInput) contentInput.addEventListener('input', function () {
+        if (contentCount) contentCount.textContent = contentInput.value.length + ' / 5000';
+    });
+
+    // Sidebar click → select memo
+    if (barList) barList.addEventListener('click', function (e) {
+        var item = e.target.closest('.bar-item');
+        if (!item) return;
+        var id = parseInt(item.getAttribute('data-id'));
+        if (id) selectMemo(id);
+    });
+
+    // Keyboard: Ctrl+N new memo
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); newMemoMode(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if (state.editingId !== null) update(); else create(); }
     });
 
     document.addEventListener('DOMContentLoaded', fetchMemos);
