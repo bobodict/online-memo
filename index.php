@@ -17,8 +17,8 @@ require_once __DIR__ . '/includes/header.php';
                 <a href="logout.php" class="logout-link">退出</a>
             </div>
         </div>
-        <button class="btn-new-memo" id="btn-new-memo" title="新建备忘录 (Ctrl+N)">+ 新建</button>
-        <div class="bar-section-title" id="bar-section-title">所有备忘录</div>
+        <button class="btn-new-memo" id="btn-new-memo">+ 新建备忘录</button>
+        <div class="bar-section-title" id="bar-section-title">全部</div>
         <div class="bar-list" id="bar-list">
             <div class="bar-item-empty" id="bar-loading">加载中...</div>
             <div class="bar-item-empty" id="bar-empty" style="display:none">没有备忘录</div>
@@ -28,28 +28,31 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- ===== RIGHT PANEL ===== -->
     <main class="right-panel" id="right-panel">
-        <div class="form-area" id="form-area">
-            <h2 id="form-heading">新建备忘录</h2>
-            <div class="form-card">
-                <div class="form-row">
-                    <div class="form-field">
-                        <label for="memo-title">标题</label>
-                        <input type="text" id="memo-title" class="input" maxlength="200" placeholder="输入标题...">
-                        <span class="field-error" id="title-error"></span>
-                    </div>
-                    <div class="form-field">
-                        <label for="memo-content">内容</label>
-                        <textarea id="memo-content" class="input" maxlength="5000" placeholder="输入内容..." rows="8"></textarea>
-                        <span class="char-count" id="content-count">0 / 5000</span>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-primary" id="submit-btn">添加备忘录</button>
-                        <button class="btn btn-secondary" id="cancel-edit-btn" style="display:none">取消编辑</button>
-                        <button class="btn btn-danger" id="delete-edit-btn" style="display:none;margin-left:auto">删除</button>
-                    </div>
+
+        <!-- 空状态：什么都没选 -->
+        <div class="right-placeholder" id="right-placeholder">
+            <span class="placeholder-icon">&#9998;</span>
+            <p>选择一条备忘录</p>
+            <p class="sub">或点击左边「+ 新建备忘录」</p>
+        </div>
+
+        <!-- 编辑器：新建 or 编辑 -->
+        <div class="editor" id="editor" style="display:none">
+            <div class="editor-toolbar">
+                <span class="editor-mode" id="editor-mode">新建</span>
+                <div class="editor-actions">
+                    <button class="btn btn-sm" id="btn-toggle" style="display:none">标记完成</button>
+                    <button class="btn btn-sm btn-danger" id="btn-delete" style="display:none">删除</button>
+                    <button class="btn btn-primary btn-sm" id="btn-save">保存</button>
                 </div>
             </div>
+            <div class="editor-body">
+                <input type="text" class="editor-title" id="editor-title" placeholder="标题" maxlength="200">
+                <textarea class="editor-content" id="editor-content" placeholder="开始写..." maxlength="5000"></textarea>
+            </div>
+            <div class="editor-meta" id="editor-meta"></div>
         </div>
+
     </main>
 
 </div>
