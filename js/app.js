@@ -35,26 +35,26 @@
     }
 
     // Char count
-    contentInput.addEventListener('input', function () {
+    if (contentInput) contentInput.addEventListener('input', function () {
         var len = contentInput.value.length;
-        contentCount.textContent = len + ' / 5000';
+        if (contentCount) contentCount.textContent = len + ' / 5000';
     });
 
     // Validation
     function validate() {
         var ok = true;
-        if (titleInput.value.trim() === '') {
-            titleError.textContent = '标题不能为空';
-            titleInput.classList.add('input-error');
+        if (titleInput && titleInput.value.trim() === '') {
+            if (titleError) titleError.textContent = '标题不能为空';
+            if (titleInput) titleInput.classList.add('input-error');
             ok = false;
         } else {
-            titleError.textContent = '';
-            titleInput.classList.remove('input-error');
+            if (titleError) titleError.textContent = '';
+            if (titleInput) titleInput.classList.remove('input-error');
         }
         return ok;
     }
-    titleInput.addEventListener('input', function () {
-        if (titleInput.value.trim() !== '') { titleError.textContent = ''; titleInput.classList.remove('input-error'); }
+    if (titleInput) titleInput.addEventListener('input', function () {
+        if (titleInput.value.trim() !== '') { if (titleError) titleError.textContent = ''; titleInput.classList.remove('input-error'); }
     });
 
     // API
@@ -173,7 +173,7 @@
     }
 
     // Form
-    submitBtn.addEventListener('click', function (e) {
+    if (submitBtn) submitBtn.addEventListener('click', function (e) {
         e.preventDefault();
         if (!validate()) return;
         var title = titleInput.value.trim(), content = contentInput.value.trim();
@@ -197,29 +197,27 @@
         titleInput.focus(); titleInput.scrollIntoView({ behavior: 'smooth' });
     }
 
-    cancelBtn.addEventListener('click', function () { exitEdit(); render(); });
-
-    // Event delegation
-    memoList.addEventListener('click', function (e) {
-        var t = e.target;
-        var id = parseInt(t.getAttribute('data-id'));
-        if (!id) return;
-
-        if (t.classList.contains('btn-edit')) {
-            var m = state.memos.find(function (x) { return x.id === id; });
-            if (m) enterEdit(m);
-        }
-        if (t.classList.contains('btn-save')) {
-            var card = t.closest('.memo-item');
-            var nt = card.querySelector('.edit-title').value.trim();
-            var nc = card.querySelector('.edit-content').value.trim();
-            if (nt === '') { showMessage('标题不能为空', 'error'); return; }
-            updateMemo(id, nt, nc);
-        }
-        if (t.classList.contains('btn-cancel-edit')) { exitEdit(); render(); }
-        if (t.classList.contains('btn-toggle')) { toggleMemo(id); }
-        if (t.classList.contains('btn-delete')) { deleteMemo(id); }
+    document.addEventListener('DOMContentLoaded', function () {
+        if (cancelBtn) cancelBtn.addEventListener('click', function () { exitEdit(); render(); });
+        if (memoList) memoList.addEventListener('click', function (e) {
+            var t = e.target;
+            var id = parseInt(t.getAttribute('data-id'));
+            if (!id) return;
+            if (t.classList.contains('btn-edit')) {
+                var m = state.memos.find(function (x) { return x.id === id; });
+                if (m) enterEdit(m);
+            }
+            if (t.classList.contains('btn-save')) {
+                var card = t.closest('.memo-item');
+                var nt = card.querySelector('.edit-title').value.trim();
+                var nc = card.querySelector('.edit-content').value.trim();
+                if (nt === '') { showMessage('标题不能为空', 'error'); return; }
+                updateMemo(id, nt, nc);
+            }
+            if (t.classList.contains('btn-cancel-edit')) { exitEdit(); render(); }
+            if (t.classList.contains('btn-toggle')) { toggleMemo(id); }
+            if (t.classList.contains('btn-delete')) { deleteMemo(id); }
+        });
+        fetchMemos();
     });
-
-    document.addEventListener('DOMContentLoaded', fetchMemos);
 })();
