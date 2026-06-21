@@ -1,0 +1,14 @@
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# WAMP/XWAMP logs
+*.log
+
+# Archives
+*.zip
+*.rar
