@@ -18,13 +18,10 @@ require_once __DIR__ . '/includes/header.php';
             </div>
         </div>
         <button class="btn-new-memo" id="btn-new-memo">+ 新建备忘录</button>
-
-        <!-- 分类筛选 -->
         <div class="bar-section-title">分类</div>
         <div class="bar-categories" id="bar-categories">
             <span class="cat-tag active" data-cat="">全部</span>
         </div>
-
         <div class="bar-section-title" id="bar-section-title">全部</div>
         <div class="bar-list" id="bar-list">
             <div class="bar-item-empty" id="bar-loading">加载中...</div>
@@ -43,10 +40,10 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
         <div class="editor" id="editor" style="display:none">
-            <!-- 工具栏 -->
-            <div class="editor-toolbar">
-                <span class="editor-mode" id="editor-mode">新建</span>
-                <div class="editor-actions">
+            <!-- 顶栏 -->
+            <div class="editor-topbar">
+                <span class="editor-mode" id="editor-mode">新建备忘录</span>
+                <div class="editor-topbar-right">
                     <input type="text" class="cat-input" id="editor-category" placeholder="分类..." maxlength="30" list="cat-list">
                     <datalist id="cat-list"></datalist>
                     <button class="btn btn-sm" id="btn-toggle" style="display:none">标记完成</button>
@@ -57,25 +54,25 @@ require_once __DIR__ . '/includes/header.php';
 
             <!-- 格式工具栏 -->
             <div class="format-bar" id="format-bar" style="display:none">
-                <button class="fmt-btn" data-cmd="bold" title="加粗 (Ctrl+B)"><b>B</b></button>
-                <button class="fmt-btn" data-cmd="italic" title="斜体 (Ctrl+I)"><i>I</i></button>
-                <button class="fmt-btn" data-cmd="underline" title="下划线 (Ctrl+U)"><u>U</u></button>
-                <button class="fmt-btn" data-cmd="strikeThrough" title="删除线"><s>S</s></button>
+                <button class="fmt-btn" data-cmd="bold"><b>B</b></button>
+                <button class="fmt-btn" data-cmd="italic"><i>I</i></button>
+                <button class="fmt-btn" data-cmd="underline"><u>U</u></button>
+                <button class="fmt-btn" data-cmd="strikeThrough"><s>S</s></button>
                 <span class="fmt-sep"></span>
-                <button class="fmt-btn" data-cmd="formatBlock" data-val="h2" title="标题">H</button>
-                <button class="fmt-btn" data-cmd="formatBlock" data-val="h3" title="小标题">h</button>
+                <button class="fmt-btn" data-cmd="formatBlock" data-val="h2">H2</button>
+                <button class="fmt-btn" data-cmd="formatBlock" data-val="h3">H3</button>
                 <span class="fmt-sep"></span>
-                <button class="fmt-btn" data-cmd="insertUnorderedList" title="无序列表">&#8226; list</button>
-                <button class="fmt-btn" data-cmd="insertOrderedList" title="有序列表">1. list</button>
+                <button class="fmt-btn" data-cmd="insertUnorderedList">- List</button>
+                <button class="fmt-btn" data-cmd="insertOrderedList">1. List</button>
                 <span class="fmt-sep"></span>
-                <button class="fmt-btn" id="btn-table" title="插入表格">&#9638; 表格</button>
-                <button class="fmt-btn" id="btn-clear-fmt" title="清除格式">Tx</button>
+                <button class="fmt-btn" id="btn-table">Table</button>
+                <button class="fmt-btn" id="btn-clear-fmt">Tx</button>
             </div>
 
             <!-- 编辑区 -->
             <div class="editor-body">
                 <input type="text" class="editor-title" id="editor-title" placeholder="标题" maxlength="200">
-                <div class="editor-content" id="editor-content" contenteditable="true" placeholder="开始写..."></div>
+                <div class="editor-content" id="editor-content" contenteditable="true" placeholder="输入内容..."></div>
             </div>
             <div class="editor-meta" id="editor-meta"></div>
         </div>
