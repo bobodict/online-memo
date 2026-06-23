@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS memos (
     user_id      INT NOT NULL,
     title        VARCHAR(200) NOT NULL,
     content      TEXT,
+    category     VARCHAR(30) DEFAULT '' COMMENT '分类标签',
+    is_html      TINYINT(1) DEFAULT 0 COMMENT '0=纯文本, 1=HTML',
     is_completed TINYINT(1) DEFAULT 0 COMMENT '0=未完成, 1=已完成',
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
