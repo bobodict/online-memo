@@ -26,7 +26,7 @@
     --bar-w: 300px;
 }
 
-html { font-size: 15px; height: 100%; }
+html { font-size: 17px; height: 100%; }
 body {
     font-family: var(--font); background: var(--bg); color: var(--text);
     line-height: 1.45; height: 100vh; overflow: hidden;
@@ -40,9 +40,7 @@ a { color: var(--blue); text-decoration: none; }
 /* ============ LEFT BAR ============ */
 .left-bar {
     width: var(--bar-w); min-width: var(--bar-w);
-    background: var(--sidebar-bg);
-    backdrop-filter: blur(30px) saturate(200%);
-    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    background: #E8E8ED;
     border-right: 0.5px solid var(--sep);
     display: flex; flex-direction: column; overflow: hidden;
 }
@@ -91,7 +89,7 @@ a { color: var(--blue); text-decoration: none; }
 .bar-item.active { background: var(--card); box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
 .bar-item.done { opacity: 0.45; }
 .bar-item.done .bar-item-title { text-decoration: line-through; }
-.bar-item-title { font-size: 0.85rem; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-item-title { font-size: 0.9rem; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bar-item-meta { font-size: 0.68rem; color: var(--text-4); font-family: var(--mono); margin-top: 2px; }
 .bar-item-empty { text-align: center; padding: 32px 16px; color: var(--text-4); font-size: 0.78rem; }
 .bar-footer { padding: 14px 20px; border-top: 0.5px solid var(--sep); font-size: 0.7rem; color: var(--text-4); }
@@ -149,7 +147,7 @@ a { color: var(--blue); text-decoration: none; }
 
 .editor-title {
     width: 100%; padding: 0; border: none; border-radius: 0;
-    font-size: 1.7rem; font-weight: 800; font-family: var(--font);
+    font-size: 2rem; font-weight: 800; font-family: var(--font);
     letter-spacing: -0.03em; background: transparent; color: var(--text);
     outline: none; line-height: 1.2; margin-bottom: 12px;
 }
@@ -159,7 +157,7 @@ a { color: var(--blue); text-decoration: none; }
 .editor-content {
     width: 100%; flex: 1; min-height: 500px;
     padding: 0; border: none; border-radius: 0;
-    font-size: 0.95rem; font-family: var(--font);
+    font-size: 1rem; font-family: var(--font);
     background: transparent; color: var(--text-2);
     outline: none; line-height: 1.8; cursor: text;
     word-break: break-word;
