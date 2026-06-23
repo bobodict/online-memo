@@ -20,7 +20,7 @@
     var btnSave = $('btn-save'), btnDelete = $('btn-delete'), btnToggle = $('btn-toggle'), btnPin = $('btn-pin'), btnNew = $('btn-new-memo');
     var formatBar = $('format-bar'), catList = $('cat-list'), searchInput = $('search-input');
     var btnCloseTrash = $('btn-close-trash'), btnDark = $('btn-dark-mode');
-    var eDue = $('editor-due'), fileImage = $('file-image');
+    var eDue = $('editor-due');
     var toastArea = $('toast-area');
     var modalOverlay = $('modal-overlay'), modalTitle = $('modal-title'), modalBody = $('modal-body'), modalFooter = $('modal-footer');
 
@@ -326,39 +326,14 @@
         ], function(r) {
             var rows = parseInt(r.rows) || 2, cols = parseInt(r.cols) || 3;
             if (rows < 1) rows = 1; if (cols < 1) cols = 1;
-            var html = '<table><thead><tr>';
-            for (var j = 0; j < cols; j++) html += '<th>表头</th>';
-            html += '</tr></thead><tbody>';
-            for (var i = 1; i < rows; i++) { html += '<tr>'; for (var k = 0; k < cols; k++) html += '<td>&nbsp;</td>'; html += '</tr>'; }
-            html += '</tbody></table>';
+            var html = '<table>';
+            for (var i = 0; i < rows; i++) { html += '<tr>'; for (var k = 0; k < cols; k++) html += '<td>&nbsp;</td>'; html += '</tr>'; }
+            html += '</table>';
             eContent.focus();
             document.execCommand('insertHTML', false, html);
         });
     });
-    $('btn-image').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); fileImage.click(); });
     $('btn-clear-fmt').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); document.execCommand('removeFormat', false, null); eContent.focus(); });
-    fileImage.addEventListener('change', function () {
-        if (!fileImage.files || !fileImage.files[0]) return;
-        var file = fileImage.files[0];
-        if (file.size > 5 * 1024 * 1024) { toast('图片不能超过 5MB'); return; }
-        var formData = new FormData();
-        formData.append('image', file);
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'api/upload.php');
-        xhr.setRequestHeader('X-CSRF-Token', csrf);
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                var j = JSON.parse(xhr.responseText);
-                if (j.success) {
-                    eContent.focus();
-                    document.execCommand('insertHTML', false, '<span class="img-wrap" contenteditable="false"><img src="' + j.url + '" alt=""><span class="img-resize-handle"></span></span>&nbsp;');
-                } else { toast(j.message || '上传失败'); }
-            } else { toast('上传失败'); }
-        };
-        xhr.onerror = function () { toast('网络错误'); };
-        xhr.send(formData);
-        fileImage.value = '';
-    });
 
     function toggleFormatBtns() {
         var btns = formatBar.querySelectorAll('.fmt-btn');

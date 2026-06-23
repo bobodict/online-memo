@@ -95,8 +95,6 @@ require_once __DIR__ . '/includes/header.php';
                 <button class="fmt-btn" data-cmd="insertOrderedList">1. List</button>
                 <span class="fmt-sep"></span>
                 <button class="fmt-act" id="btn-table">Table</button>
-                <button class="fmt-act" id="btn-image">Img</button>
-                <input type="file" id="file-image" accept="image/*" style="display:none">
                 <button class="fmt-act" id="btn-clear-fmt">Tx</button>
             </div>
 
