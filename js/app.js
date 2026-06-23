@@ -20,6 +20,7 @@
     var btnSave = $('btn-save'), btnDelete = $('btn-delete'), btnToggle = $('btn-toggle'), btnPin = $('btn-pin'), btnNew = $('btn-new-memo');
     var formatBar = $('format-bar'), catList = $('cat-list'), searchInput = $('search-input');
     var btnCloseTrash = $('btn-close-trash'), btnDark = $('btn-dark-mode');
+    var eDue = $('editor-due'), fileImage = $('file-image');
     var toastArea = $('toast-area');
 
     function toast(text) {
@@ -67,8 +68,14 @@
             for (var i = 0; i < filtered.length; i++) {
                 var m = filtered[i];
                 var cls = 'bar-item' + (m.is_completed ? ' done' : '') + (m.is_pinned ? ' pinned' : '') + (state.editingId === m.id ? ' active' : '');
+                var dueBadge = '';
+                if (m.due_date) {
+                    var due = new Date(m.due_date), now = new Date();
+                    var clsDue = due < now ? 'due-badge overdue' : 'due-badge upcoming';
+                    dueBadge = '<span class="' + clsDue + '">' + fmt(m.due_date) + '</span>';
+                }
                 html += '<div class="' + cls + '" data-id="' + m.id + '">' +
-                    '<div class="bar-item-title">' + (m.is_pinned ? '<span class="pin-dot">&#9733; </span>' : '') + esc(m.title) + '</div>' +
+                    '<div class="bar-item-title">' + (m.is_pinned ? '<span class="pin-dot">&#9733; </span>' : '') + esc(m.title) + dueBadge + '</div>' +
                     '<div class="bar-item-meta">' + fmt(m.updated_at || m.created_at) + (m.category ? ' &middot; ' + esc(m.category) : '') + '</div></div>';
             }
             barList.innerHTML = html;
@@ -124,7 +131,7 @@
         state.editingId = null; state.trashMode = false;
         hideAll(); editor.style.display = ''; formatBar.style.display = '';
         editorMode.textContent = '新建备忘录'; editorMeta.textContent = '';
-        eTitle.value = ''; eContent.innerHTML = ''; eCategory.value = '';
+        eTitle.value = ''; eContent.innerHTML = ''; eCategory.value = ''; eDue.value = '';
         btnDelete.style.display = 'none'; btnToggle.style.display = 'none'; btnPin.style.display = 'none';
         btnSave.textContent = '保存'; renderBar(); eTitle.focus();
     }
@@ -136,6 +143,7 @@
         editorMode.textContent = m.is_completed ? '已完成' : '编辑';
         eTitle.value = m.title; eCategory.value = m.category || '';
         if (m.is_html) eContent.innerHTML = m.content; else eContent.innerText = m.content;
+        eDue.value = m.due_date ? m.due_date.replace(' ', 'T').substring(0, 16) : '';
         editorMeta.textContent = '创建于 ' + fmt(m.created_at) + ' - 更新于 ' + fmt(m.updated_at || m.created_at);
         btnDelete.style.display = ''; btnToggle.style.display = ''; btnPin.style.display = '';
         btnToggle.textContent = m.is_completed ? '恢复' : '完成';
@@ -151,7 +159,8 @@
         var content = getContent(), isHtml = content.indexOf('<') !== -1;
         var cat = (eCategory.value || '').trim().substring(0, 30);
         btnSave.disabled = true; btnSave.textContent = '...';
-        var p = { title: title, content: content, category: cat, is_html: isHtml };
+        var due = eDue.value || '';
+        var p = { title: title, content: content, category: cat, is_html: isHtml, due_date: due };
         if (state.editingId !== null) {
             p.id = state.editingId;
             api('update', p).then(function (j) { updateMemoInState(j.memo); editorMeta.textContent = '更新于 ' + fmt(j.memo.updated_at); renderBar(); renderCategories(); toast('已保存'); })
@@ -254,6 +263,30 @@
         html += '</tbody></table>';
         document.execCommand('insertHTML', false, html); eContent.focus();
     });
+    $('btn-image').addEventListener('mousedown', function (e) { e.preventDefault(); fileImage.click(); });
+    fileImage.addEventListener('change', function () {
+        if (!fileImage.files || !fileImage.files[0]) return;
+        var file = fileImage.files[0];
+        if (file.size > 5 * 1024 * 1024) { toast('图片不能超过 5MB'); return; }
+        var formData = new FormData();
+        formData.append('image', file);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'api/upload.php');
+        xhr.setRequestHeader('X-CSRF-Token', csrf);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                var j = JSON.parse(xhr.responseText);
+                if (j.success) {
+                    eContent.focus();
+                    document.execCommand('insertHTML', false, '<img src="' + j.url + '" alt="">');
+                } else { toast(j.message || '上传失败'); }
+            } else { toast('上传失败'); }
+        };
+        xhr.onerror = function () { toast('网络错误'); };
+        xhr.send(formData);
+        fileImage.value = '';
+    });
+
     $('btn-clear-fmt').addEventListener('mousedown', function (e) { e.preventDefault(); document.execCommand('removeFormat', false, null); eContent.focus(); });
     function toggleFormatBtns() {
         var btns = formatBar.querySelectorAll('.fmt-btn');

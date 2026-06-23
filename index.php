@@ -74,6 +74,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="editor-topbar-right">
                     <input type="text" class="cat-input" id="editor-category" placeholder="分类..." maxlength="30" list="cat-list">
                     <datalist id="cat-list"></datalist>
+                    <input type="datetime-local" class="date-input" id="editor-due" title="截止日期">
                     <button class="btn btn-sm" id="btn-pin" style="display:none" title="置顶">📌</button>
                     <button class="btn btn-sm" id="btn-toggle" style="display:none">标记完成</button>
                     <button class="btn btn-sm btn-danger" id="btn-delete" style="display:none">删除</button>
@@ -94,6 +95,8 @@ require_once __DIR__ . '/includes/header.php';
                 <button class="fmt-btn" data-cmd="insertOrderedList">1. List</button>
                 <span class="fmt-sep"></span>
                 <button class="fmt-btn" id="btn-table">Table</button>
+                <button class="fmt-btn" id="btn-image">🖼</button>
+                <input type="file" id="file-image" accept="image/*" style="display:none">
                 <button class="fmt-btn" id="btn-clear-fmt">Tx</button>
             </div>
 

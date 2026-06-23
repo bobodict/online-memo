@@ -195,6 +195,27 @@ a { color: var(--blue); text-decoration: none; }
 }
 .cat-input:focus { border-color: var(--blue); }
 
+/* Date picker */
+.date-input {
+    padding: 4px 8px; border: 1px solid var(--sep); border-radius: 6px;
+    font-size: 0.72rem; font-family: var(--font); background: var(--bg); color: var(--text);
+    outline: none; width: 150px;
+}
+.date-input:focus { border-color: var(--blue); }
+
+/* Due date badges in sidebar */
+.due-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 99px;
+    font-size: 0.62rem; font-weight: 600; margin-left: 4px;
+}
+.due-badge.overdue { background: var(--red-bg); color: var(--red); }
+.due-badge.upcoming { background: var(--blue-bg); color: var(--blue); }
+
+/* Images in editor */
+.editor-content img {
+    max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0;
+}
+
 /* Format bar */
 .format-bar { display: flex; align-items: center; gap: 2px; padding: 6px 0 12px; flex-wrap: wrap; }
 .fmt-btn {

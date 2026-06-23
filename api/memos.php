@@ -25,15 +25,17 @@ function check_csrf(): void {
     if (!csrf_verify($headers['x-csrf-token'] ?? '')) { http_response_code(403); echo json_encode(['success' => false, 'message' => '请求无效']); exit; }
 }
 function clean_html(string $html): string {
-    $allowed = '<b><i><u><s><strong><em><strike><h2><h3><br><p><table><thead><tbody><tr><th><td><ul><ol><li><span><div><sub><sup>';
+    $allowed = '<b><i><u><s><strong><em><strike><h2><h3><br><p><table><thead><tbody><tr><th><td><ul><ol><li><span><div><sub><sup><img>';
     $html = strip_tags($html, $allowed);
+    // Only allow img with src attribute (relative paths only)
+    $html = preg_replace('/<img\s+(?![^>]*src="uploads\/[^"]*")[^>]*>/i', '', $html);
     $html = preg_replace('/\s+on\w+\s*=\s*"[^"]*"/i', '', $html);
     $html = preg_replace('/\s+on\w+\s*=\s*\'[^\']*\'/i', '', $html);
     $html = preg_replace('/javascript\s*:/i', '', $html);
     return trim($html);
 }
 
-$fields = 'id, title, content, category, is_completed, is_html, is_pinned, is_deleted, created_at, updated_at';
+$fields = 'id, title, content, category, is_completed, is_html, is_pinned, is_deleted, due_date, created_at, updated_at';
 
 try {
     switch ($action) {
@@ -64,8 +66,9 @@ try {
             $category = trim($in['category'] ?? ''); $is_html = !empty($in['is_html']) ? 1 : 0;
             if ($title === '') { http_response_code(422); echo json_encode(['success' => false, 'message' => '标题不能为空']); break; }
             if ($is_html) $content = clean_html($content);
-            $stmt = $db->prepare('INSERT INTO memos (user_id, title, content, category, is_html) VALUES (:uid, :t, :c, :cat, :h)');
-            $stmt->execute(['uid' => $user_id, 't' => $title, 'c' => $content, 'cat' => mb_substr($category, 0, 30), 'h' => $is_html]);
+            $due = ($in['due_date'] ?? '') ?: null;
+            $stmt = $db->prepare('INSERT INTO memos (user_id, title, content, category, is_html, due_date) VALUES (:uid, :t, :c, :cat, :h, :due)');
+            $stmt->execute(['uid' => $user_id, 't' => $title, 'c' => $content, 'cat' => mb_substr($category, 0, 30), 'h' => $is_html, 'due' => $due]);
             $id = (int)$db->lastInsertId();
             $stmt = $db->prepare("SELECT {$fields} FROM memos WHERE id=:id"); $stmt->execute(['id' => $id]); $m = $stmt->fetch();
             $m['id']=(int)$m['id']; $m['is_completed']=(bool)$m['is_completed']; $m['is_html']=(bool)$m['is_html']; $m['is_pinned']=(bool)$m['is_pinned']; $m['is_deleted']=(bool)$m['is_deleted'];
@@ -82,8 +85,9 @@ try {
             if ($id <= 0) { http_response_code(422); echo json_encode(['success' => false, 'message' => '无效 ID']); break; }
             if ($title === '') { http_response_code(422); echo json_encode(['success' => false, 'message' => '标题不能为空']); break; }
             if ($is_html) $content = clean_html($content);
-            $stmt = $db->prepare('UPDATE memos SET title=:t, content=:c, category=:cat, is_html=:h, updated_at=CURRENT_TIMESTAMP WHERE id=:id AND user_id=:uid');
-            $stmt->execute(['t' => $title, 'c' => $content, 'cat' => mb_substr($category, 0, 30), 'h' => $is_html, 'id' => $id, 'uid' => $user_id]);
+            $due = ($in['due_date'] ?? '') ?: null;
+            $stmt = $db->prepare('UPDATE memos SET title=:t, content=:c, category=:cat, is_html=:h, due_date=:due, updated_at=CURRENT_TIMESTAMP WHERE id=:id AND user_id=:uid');
+            $stmt->execute(['t' => $title, 'c' => $content, 'cat' => mb_substr($category, 0, 30), 'h' => $is_html, 'due' => $due, 'id' => $id, 'uid' => $user_id]);
             if ($stmt->rowCount() === 0) { http_response_code(404); echo json_encode(['success' => false, 'message' => '不存在或无权操作']); break; }
             $stmt = $db->prepare("SELECT {$fields} FROM memos WHERE id=:id"); $stmt->execute(['id' => $id]); $m = $stmt->fetch();
             $m['id']=(int)$m['id']; $m['is_completed']=(bool)$m['is_completed']; $m['is_html']=(bool)$m['is_html']; $m['is_pinned']=(bool)$m['is_pinned']; $m['is_deleted']=(bool)$m['is_deleted'];
