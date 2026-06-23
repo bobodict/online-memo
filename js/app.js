@@ -22,6 +22,56 @@
     var btnCloseTrash = $('btn-close-trash'), btnDark = $('btn-dark-mode');
     var eDue = $('editor-due'), fileImage = $('file-image');
     var toastArea = $('toast-area');
+    var modalOverlay = $('modal-overlay'), modalTitle = $('modal-title'), modalBody = $('modal-body'), modalFooter = $('modal-footer');
+
+    // ====== Custom Modal ======
+    function showModal(title, bodyHTML, footerHTML, onClose) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = bodyHTML;
+        modalFooter.innerHTML = footerHTML;
+        modalOverlay.style.display = '';
+        $('modal-close').onclick = function () { modalOverlay.style.display = 'none'; if (onClose) onClose(); };
+    }
+    function hideModal() { modalOverlay.style.display = 'none'; }
+    // Close on overlay click
+    modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) hideModal(); });
+
+    // Prompt modal - returns value via callback
+    function modalPrompt(title, fields, callback) {
+        var body = '';
+        fields.forEach(function (f) {
+            body += '<label for="modal-field-' + f.id + '">' + f.label + '</label>';
+            body += '<input type="' + (f.type || 'text') + '" class="input" id="modal-field-' + f.id + '" placeholder="' + (f.placeholder || '') + '" value="' + (f.value || '') + '">';
+        });
+        var footer = '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'modal-overlay\').style.display=\'none\'">取消</button>';
+        footer += '<button class="btn btn-primary btn-sm" id="modal-confirm-btn">确定</button>';
+        showModal(title, body, footer);
+        document.getElementById('modal-confirm-btn').onclick = function () {
+            var result = {};
+            fields.forEach(function (f) {
+                result[f.id] = document.getElementById('modal-field-' + f.id).value;
+            });
+            hideModal();
+            callback(result);
+        };
+        // Enter key submits
+        setTimeout(function () {
+            var firstInput = document.querySelector('#modal-body .input');
+            if (firstInput) firstInput.focus();
+            document.querySelector('#modal-body').onkeydown = function (e) {
+                if (e.key === 'Enter') { document.getElementById('modal-confirm-btn').click(); }
+            };
+        }, 100);
+    }
+
+    // Confirm modal
+    function modalConfirm(title, message, callback) {
+        var body = '<p style="font-size:0.9rem;color:var(--text-2);line-height:1.6">' + message + '</p>';
+        var footer = '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'modal-overlay\').style.display=\'none\'">取消</button>';
+        footer += '<button class="btn btn-danger btn-sm" id="modal-confirm-btn">确定</button>';
+        showModal(title, body, footer);
+        document.getElementById('modal-confirm-btn').onclick = function () { hideModal(); callback(true); };
+    }
 
     function toast(text) {
         var t = document.createElement('div');
@@ -112,7 +162,14 @@
         barCats.innerHTML = html;
         var opts = ''; for (var j = 0; j < allCats.length; j++) opts += '<option value="' + esc(allCats[j]) + '">'; if (catList) catList.innerHTML = opts;
         var addBtn = document.getElementById('btn-add-cat');
-        if (addBtn) addBtn.onclick = function () { var n = prompt('新分类名称：'); if (n && n.trim()) { n = n.trim().substring(0, 30); var s = getSavedCats(); if (s.indexOf(n) === -1) { s.push(n); saveCats(s); } renderCategories(); } };
+        if (addBtn) addBtn.onclick = function () {
+            modalPrompt('新建分类', [{id:'catName',label:'分类名称',placeholder:'输入分类名...'}], function(r) {
+                var n = (r.catName || '').trim().substring(0, 30);
+                if (!n) return;
+                var s = getSavedCats(); if (s.indexOf(n) === -1) { s.push(n); saveCats(s); }
+                renderCategories();
+            });
+        };
     }
 
     function updateFooter(cnt) {
@@ -175,7 +232,12 @@
 
     function trash() {
         if (!state.editingId) return;
-        if (!confirm('移动到回收站？')) return;
+        modalConfirm('移动到回收站', '确定要删除这条备忘录吗？可以在回收站中恢复。', function (ok) {
+            if (!ok) return;
+            _doTrash();
+        });
+    }
+    function _doTrash() {
         api('delete', { id: state.editingId }).then(function () {
             var i = state.memos.findIndex(function (x) { return x.id === state.editingId; }); if (i !== -1) state.memos[i].is_deleted = true;
             showPlaceholder(); renderBar(); renderTrashSidebar(); toast('已移到回收站');
@@ -255,13 +317,19 @@
     });
     $('btn-table').addEventListener('mousedown', function (e) {
         e.preventDefault();
-        var r = parseInt(prompt('行数', '2')), c = parseInt(prompt('列数', '3'));
-        if (!r || !c) return;
-        var html = '<table><thead><tr>'; for (var j = 0; j < c; j++) html += '<th>表头</th>';
-        html += '</tr></thead><tbody>';
-        for (var i = 1; i < r; i++) { html += '<tr>'; for (var k = 0; k < c; k++) html += '<td>&nbsp;</td>'; html += '</tr>'; }
-        html += '</tbody></table>';
-        document.execCommand('insertHTML', false, html); eContent.focus();
+        modalPrompt('插入表格', [
+            {id:'rows', label:'行数', type:'number', value:'2', placeholder:'2'},
+            {id:'cols', label:'列数', type:'number', value:'3', placeholder:'3'}
+        ], function(r) {
+            var rows = parseInt(r.rows) || 2, cols = parseInt(r.cols) || 3;
+            if (rows < 1) rows = 1; if (cols < 1) cols = 1;
+            var html = '<table><thead><tr>';
+            for (var j = 0; j < cols; j++) html += '<th>表头</th>';
+            html += '</tr></thead><tbody>';
+            for (var i = 1; i < rows; i++) { html += '<tr>'; for (var k = 0; k < cols; k++) html += '<td>&nbsp;</td>'; html += '</tr>'; }
+            html += '</tbody></table>';
+            document.execCommand('insertHTML', false, html); eContent.focus();
+        });
     });
     $('btn-image').addEventListener('mousedown', function (e) { e.preventDefault(); fileImage.click(); });
     fileImage.addEventListener('change', function () {
@@ -321,12 +389,14 @@
         var del = e.target.closest('.cat-del');
         if (del) {
             var cat = del.getAttribute('data-delcat');
-            if (!confirm('删除分类 "' + cat + '"？')) return;
-            var s = getSavedCats(); var idx = s.indexOf(cat);
-            if (idx !== -1) { s.splice(idx, 1); saveCats(s); }
-            if (state.activeCat === cat) state.activeCat = '';
-            renderCategories();
-            api('list').then(function (j) { state.memos = j.memos; state.categories = j.categories || []; renderBar(); });
+            modalConfirm('删除分类', '删除分类 "' + cat + '" 不会删除其中的备忘录。', function (ok) {
+                if (!ok) return;
+                var s = getSavedCats(); var idx = s.indexOf(cat);
+                if (idx !== -1) { s.splice(idx, 1); saveCats(s); }
+                if (state.activeCat === cat) state.activeCat = '';
+                renderCategories();
+                api('list').then(function (j) { state.memos = j.memos; state.categories = j.categories || []; renderBar(); });
+            });
             return;
         }
         var tag = e.target.closest('.cat-tag'); if (!tag) return;
@@ -341,8 +411,10 @@
             api('restore', { id: id }).then(function () { openTrash(); toast('已恢复'); }).catch(function () {});
         }
         if (t.classList.contains('btn-purge')) {
-            if (!confirm('彻底删除？不可恢复！')) return;
-            api('purge', { id: id }).then(function () { openTrash(); toast('已彻底删除'); }).catch(function () {});
+            modalConfirm('彻底删除', '此操作不可恢复，确定要永久删除吗？', function (ok) {
+                if (!ok) return;
+                api('purge', { id: id }).then(function () { openTrash(); toast('已彻底删除'); }).catch(function () {});
+            });
         }
     });
 

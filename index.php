@@ -110,6 +110,18 @@ require_once __DIR__ . '/includes/header.php';
 
 </div>
 
+<!-- 自定义弹窗 -->
+<div class="modal-overlay" id="modal-overlay" style="display:none">
+    <div class="modal-box" id="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title"></span>
+            <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer" id="modal-footer"></div>
+    </div>
+</div>
+
 <meta name="csrf-token" content="<?php echo csrf_token(); ?>">
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
