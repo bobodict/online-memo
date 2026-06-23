@@ -40,26 +40,27 @@
     function modalPrompt(title, fields, callback) {
         var body = '';
         fields.forEach(function (f) {
-            body += '<label for="modal-field-' + f.id + '">' + f.label + '</label>';
-            body += '<input type="' + (f.type || 'text') + '" class="input" id="modal-field-' + f.id + '" placeholder="' + (f.placeholder || '') + '" value="' + (f.value || '') + '">';
+            body += '<label>' + f.label + '</label>';
+            body += '<input type="' + (f.type || 'text') + '" class="input modal-input" data-field="' + f.id + '" placeholder="' + (f.placeholder || '') + '" value="' + (f.value || '') + '">';
         });
-        var footer = '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'modal-overlay\').style.display=\'none\'">取消</button>';
-        footer += '<button class="btn btn-primary btn-sm" id="modal-confirm-btn">确定</button>';
+        var footer = '<button class="btn btn-secondary btn-sm modal-cancel">取消</button>';
+        footer += '<button class="btn btn-primary btn-sm modal-confirm">确定</button>';
         showModal(title, body, footer);
-        document.getElementById('modal-confirm-btn').onclick = function () {
+        modalFooter.querySelector('.modal-confirm').onclick = function () {
             var result = {};
             fields.forEach(function (f) {
-                result[f.id] = document.getElementById('modal-field-' + f.id).value;
+                var el = modalBody.querySelector('[data-field="' + f.id + '"]');
+                result[f.id] = el ? el.value : '';
             });
             hideModal();
             callback(result);
         };
-        // Enter key submits
+        modalFooter.querySelector('.modal-cancel').onclick = hideModal;
         setTimeout(function () {
-            var firstInput = document.querySelector('#modal-body .input');
-            if (firstInput) firstInput.focus();
-            document.querySelector('#modal-body').onkeydown = function (e) {
-                if (e.key === 'Enter') { document.getElementById('modal-confirm-btn').click(); }
+            var first = modalBody.querySelector('.modal-input');
+            if (first) first.focus();
+            modalBody.onkeydown = function (e) {
+                if (e.key === 'Enter') { var cf = modalFooter.querySelector('.modal-confirm'); if (cf) cf.click(); }
             };
         }, 100);
     }
@@ -67,10 +68,11 @@
     // Confirm modal
     function modalConfirm(title, message, callback) {
         var body = '<p style="font-size:0.9rem;color:var(--text-2);line-height:1.6">' + message + '</p>';
-        var footer = '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'modal-overlay\').style.display=\'none\'">取消</button>';
-        footer += '<button class="btn btn-danger btn-sm" id="modal-confirm-btn">确定</button>';
+        var footer = '<button class="btn btn-secondary btn-sm modal-cancel">取消</button>';
+        footer += '<button class="btn btn-danger btn-sm modal-confirm">确定</button>';
         showModal(title, body, footer);
-        document.getElementById('modal-confirm-btn').onclick = function () { hideModal(); callback(true); };
+        modalFooter.querySelector('.modal-confirm').onclick = function () { hideModal(); callback(true); };
+        modalFooter.querySelector('.modal-cancel').onclick = hideModal;
     }
 
     function toast(text) {
@@ -346,7 +348,7 @@
                 var j = JSON.parse(xhr.responseText);
                 if (j.success) {
                     eContent.focus();
-                    document.execCommand('insertHTML', false, '<img src="' + j.url + '" alt="">');
+                    document.execCommand('insertHTML', false, '<span class="img-wrap" contenteditable="false"><img src="' + j.url + '" alt=""><span class="img-resize-handle"></span></span>&nbsp;');
                 } else { toast(j.message || '上传失败'); }
             } else { toast('上传失败'); }
         };
@@ -364,6 +366,22 @@
             btns[i].classList.toggle('on', document.queryCommandState(cmd));
         }
     }
+    // Image click → resize modal
+    eContent.addEventListener('click', function (e) {
+        var wrap = e.target.closest('.img-wrap');
+        if (!wrap) return;
+        var img = wrap.querySelector('img');
+        var w = img.style.width || img.naturalWidth || '';
+        var h = img.style.height || img.naturalHeight || '';
+        modalPrompt('调整图片尺寸', [
+            {id:'imgW', label:'宽度 (px)', type:'number', value:w, placeholder:img.naturalWidth || 'auto'},
+            {id:'imgH', label:'高度 (px)', type:'number', value:h, placeholder:img.naturalHeight || 'auto'}
+        ], function(r) {
+            if (r.imgW) img.style.width = r.imgW + 'px'; else img.style.width = '';
+            if (r.imgH) img.style.height = r.imgH + 'px'; else img.style.height = '';
+        });
+    });
+
     eContent.addEventListener('keyup', toggleFormatBtns);
     eContent.addEventListener('mouseup', toggleFormatBtns);
     document.addEventListener('selectionchange', function () { if (document.activeElement === eContent) toggleFormatBtns(); });

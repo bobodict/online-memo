@@ -211,12 +211,26 @@ a { color: var(--blue); text-decoration: none; }
 .due-badge.overdue { background: var(--red-bg); color: var(--red); }
 .due-badge.upcoming { background: var(--blue-bg); color: var(--blue); }
 
-/* Images in editor - resizable */
-.editor-content img {
-    max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0;
-    resize: both; overflow: auto; cursor: nwse-resize;
-    display: inline-block; min-width: 40px; min-height: 20px;
+/* Images in editor - resizable wrapper */
+.editor-content .img-wrap {
+    display: inline-block; position: relative; margin: 8px 4px;
+    max-width: 100%;
 }
+.editor-content .img-wrap img {
+    display: block; max-width: 100%; height: auto; border-radius: 6px;
+    pointer-events: none;
+}
+.editor-content .img-wrap .img-resize-handle {
+    position: absolute; right: 0; bottom: 0; width: 14px; height: 14px;
+    background: var(--blue); border-radius: 3px; cursor: nwse-resize;
+    opacity: 0; transition: opacity 0.15s;
+}
+.editor-content .img-wrap:hover .img-resize-handle { opacity: 0.8; }
+
+/* Image resize modal */
+.img-size-row { display: flex; gap: 10px; align-items: center; }
+.img-size-row .input { width: 80px; }
+.img-size-row span { color: var(--text-3); font-size: 0.8rem; }
 
 /* ============ MODAL ============ */
 .modal-overlay {
