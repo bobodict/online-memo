@@ -211,26 +211,17 @@ a { color: var(--blue); text-decoration: none; }
 .due-badge.overdue { background: var(--red-bg); color: var(--red); }
 .due-badge.upcoming { background: var(--blue-bg); color: var(--blue); }
 
-/* Images in editor - resizable wrapper */
+/* Images - resizable */
 .editor-content .img-wrap {
     display: inline-block; position: relative; margin: 8px 4px;
-    max-width: 100%;
+    max-width: 100%; resize: both; overflow: hidden;
+    min-width: 40px; min-height: 20px;
+    border-radius: 6px; vertical-align: bottom;
 }
 .editor-content .img-wrap img {
-    display: block; max-width: 100%; height: auto; border-radius: 6px;
-    pointer-events: none;
+    display: block; width: 100%; height: 100%; object-fit: contain;
+    border-radius: 6px; pointer-events: none;
 }
-.editor-content .img-wrap .img-resize-handle {
-    position: absolute; right: 0; bottom: 0; width: 14px; height: 14px;
-    background: var(--blue); border-radius: 3px; cursor: nwse-resize;
-    opacity: 0; transition: opacity 0.15s;
-}
-.editor-content .img-wrap:hover .img-resize-handle { opacity: 0.8; }
-
-/* Image resize modal */
-.img-size-row { display: flex; gap: 10px; align-items: center; }
-.img-size-row .input { width: 80px; }
-.img-size-row span { color: var(--text-3); font-size: 0.8rem; }
 
 /* ============ MODAL ============ */
 .modal-overlay {
@@ -289,6 +280,14 @@ body.dark .modal-overlay { background: rgba(0,0,0,0.6); }
 }
 .fmt-btn:hover { background: var(--sep); }
 .fmt-btn.on { background: var(--blue); color: #fff; }
+.fmt-act {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 28px; padding: 0 10px;
+    border: none; border-radius: 5px;
+    background: transparent; color: var(--text-2); font-size: 0.78rem;
+    cursor: pointer; font-family: var(--font); transition: all 0.1s;
+}
+.fmt-act:hover { background: var(--sep); }
 .fmt-sep { width: 1px; height: 16px; background: var(--sep); margin: 0 5px; }
 
 /* Editor body */

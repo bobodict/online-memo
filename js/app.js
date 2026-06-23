@@ -317,8 +317,9 @@
         var cmd = btn.getAttribute('data-cmd'), val = btn.getAttribute('data-val') || null;
         if (cmd) { document.execCommand(cmd, false, val); toggleFormatBtns(); }
     });
-    $('btn-table').addEventListener('mousedown', function (e) {
-        e.preventDefault();
+    // Table - use click (not mousedown) to avoid formatBar interference
+    $('btn-table').addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
         modalPrompt('插入表格', [
             {id:'rows', label:'行数', type:'number', value:'2', placeholder:'2'},
             {id:'cols', label:'列数', type:'number', value:'3', placeholder:'3'}
@@ -330,10 +331,12 @@
             html += '</tr></thead><tbody>';
             for (var i = 1; i < rows; i++) { html += '<tr>'; for (var k = 0; k < cols; k++) html += '<td>&nbsp;</td>'; html += '</tr>'; }
             html += '</tbody></table>';
-            document.execCommand('insertHTML', false, html); eContent.focus();
+            eContent.focus();
+            document.execCommand('insertHTML', false, html);
         });
     });
-    $('btn-image').addEventListener('mousedown', function (e) { e.preventDefault(); fileImage.click(); });
+    $('btn-image').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); fileImage.click(); });
+    $('btn-clear-fmt').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); document.execCommand('removeFormat', false, null); eContent.focus(); });
     fileImage.addEventListener('change', function () {
         if (!fileImage.files || !fileImage.files[0]) return;
         var file = fileImage.files[0];
@@ -357,7 +360,6 @@
         fileImage.value = '';
     });
 
-    $('btn-clear-fmt').addEventListener('mousedown', function (e) { e.preventDefault(); document.execCommand('removeFormat', false, null); eContent.focus(); });
     function toggleFormatBtns() {
         var btns = formatBar.querySelectorAll('.fmt-btn');
         for (var i = 0; i < btns.length; i++) {
@@ -366,22 +368,6 @@
             btns[i].classList.toggle('on', document.queryCommandState(cmd));
         }
     }
-    // Image click → resize modal
-    eContent.addEventListener('click', function (e) {
-        var wrap = e.target.closest('.img-wrap');
-        if (!wrap) return;
-        var img = wrap.querySelector('img');
-        var w = img.style.width || img.naturalWidth || '';
-        var h = img.style.height || img.naturalHeight || '';
-        modalPrompt('调整图片尺寸', [
-            {id:'imgW', label:'宽度 (px)', type:'number', value:w, placeholder:img.naturalWidth || 'auto'},
-            {id:'imgH', label:'高度 (px)', type:'number', value:h, placeholder:img.naturalHeight || 'auto'}
-        ], function(r) {
-            if (r.imgW) img.style.width = r.imgW + 'px'; else img.style.width = '';
-            if (r.imgH) img.style.height = r.imgH + 'px'; else img.style.height = '';
-        });
-    });
-
     eContent.addEventListener('keyup', toggleFormatBtns);
     eContent.addEventListener('mouseup', toggleFormatBtns);
     document.addEventListener('selectionchange', function () { if (document.activeElement === eContent) toggleFormatBtns(); });
