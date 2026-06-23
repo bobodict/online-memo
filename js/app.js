@@ -64,16 +64,45 @@
         updateFooter(filtered.length);
     }
 
-    function renderCategories() {
-        var html = '<span class="cat-tag' + (state.activeCat === '' ? ' active' : '') + '" data-cat="">全部</span>';
+    function getSavedCats() {
+        try { return JSON.parse(localStorage.getItem('memo_categories') || '[]'); } catch (e) { return []; }
+    }
+    function saveCats(cats) { localStorage.setItem('memo_categories', JSON.stringify(cats)); }
+
+    function getAllCategories() {
+        var saved = getSavedCats();
+        var merged = saved.slice();
         for (var i = 0; i < state.categories.length; i++) {
-            var cat = state.categories[i];
-            html += '<span class="cat-tag' + (state.activeCat === cat ? ' active' : '') + '" data-cat="' + esc(cat) + '">' + esc(cat) + '</span>';
+            if (merged.indexOf(state.categories[i]) === -1) merged.push(state.categories[i]);
         }
+        return merged;
+    }
+
+    function renderCategories() {
+        var allCats = getAllCategories();
+        var html = '<span class="cat-tag' + (state.activeCat === '' ? ' active' : '') + '" data-cat="">全部</span>';
+        for (var i = 0; i < allCats.length; i++) {
+            var cat = allCats[i];
+            html += '<span class="cat-row"><span class="cat-tag' + (state.activeCat === cat ? ' active' : '') + '" data-cat="' + esc(cat) + '">' + esc(cat) + '</span><button class="cat-del" data-delcat="' + esc(cat) + '" title="删除分类">&times;</button></span>';
+        }
+        html += '<button class="cat-add" id="btn-add-cat" title="添加分类">+</button>';
         barCats.innerHTML = html;
+        // Update datalist
         var opts = '';
-        for (var j = 0; j < state.categories.length; j++) opts += '<option value="' + esc(state.categories[j]) + '">';
+        for (var j = 0; j < allCats.length; j++) opts += '<option value="' + esc(allCats[j]) + '">';
         if (catList) catList.innerHTML = opts;
+
+        // Add category button
+        var addBtn = document.getElementById('btn-add-cat');
+        if (addBtn) addBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var name = prompt('新分类名称：');
+            if (!name || !name.trim()) return;
+            name = name.trim().substring(0, 30);
+            var saved = getSavedCats();
+            if (saved.indexOf(name) === -1) { saved.push(name); saveCats(saved); }
+            renderCategories();
+        });
     }
 
     function updateFooter(count) {
@@ -238,6 +267,23 @@
     });
 
     barCats.addEventListener('click', function (e) {
+        // Delete category
+        var delBtn = e.target.closest('.cat-del');
+        if (delBtn) {
+            e.stopPropagation();
+            var cat = delBtn.getAttribute('data-delcat');
+            if (!confirm('删除分类 "' + cat + '"？备忘录不会删除。')) return;
+            var saved = getSavedCats();
+            var idx = saved.indexOf(cat);
+            if (idx !== -1) { saved.splice(idx, 1); saveCats(saved); }
+            if (state.activeCat === cat) state.activeCat = '';
+            renderCategories();
+            barLoading.style.display = 'block';
+            api('list').then(function (j) { state.memos = j.memos; state.categories = j.categories || []; renderBar(); renderCategories(); })
+            .catch(function (e) { toast('加载失败', 'error'); });
+            return;
+        }
+        // Filter by category
         var tag = e.target.closest('.cat-tag'); if (!tag) return;
         state.activeCat = tag.getAttribute('data-cat');
         renderCategories();
