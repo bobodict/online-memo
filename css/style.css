@@ -297,8 +297,8 @@ body.dark .modal-overlay { background: rgba(0,0,0,0.6); }
 .editor-content:empty::before { content: attr(placeholder); color: var(--text-4); pointer-events: none; }
 .editor-content h2 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 16px 0 6px; }
 .editor-content h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin: 12px 0 4px; }
-.editor-content table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.85rem; }
-.editor-content th, .editor-content td { border: 1px solid var(--sep); padding: 8px 12px; text-align: left; }
+.editor-content table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.85rem; border: 1.5px solid var(--text-3); }
+.editor-content th, .editor-content td { border: 1px solid var(--text-4); padding: 8px 12px; text-align: left; }
 .editor-content th { background: var(--sidebar-bg); font-weight: 600; }
 .editor-content ul, .editor-content ol { padding-left: 24px; margin: 6px 0; }
 .editor-content li { margin-bottom: 2px; }
